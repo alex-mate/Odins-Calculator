@@ -1,30 +1,16 @@
-function getNumbers() {
-  let numberOne = Number(prompt("Enter the first number"));
-  if (isNaN(numberOne)) {
-    alert("Please enter a valid number");
-    return;
-  }
+const display = document.querySelector("#display");
+const numberButtons = document.querySelectorAll(".number");
+const operatorButtons = document.querySelectorAll(".operator");
+const equalsButton = document.querySelector("#equals");
+const clearButton = document.querySelector("#clear");
+const decimalButton = document.querySelector("#decimal");
+const backspaceButton = document.querySelector("#backspace");
+const errorMessage = "Math Error";
 
-  let operator = prompt("Enter the operator");
-  if (
-    operator !== "+" &&
-    operator !== "-" &&
-    operator !== "*" &&
-    operator !== "/"
-  ) {
-    alert("Please enter a valid operator");
-    return;
-  }
-
-  let numberTwo = Number(prompt("Enter the second number"));
-  if (isNaN(numberTwo)) {
-    alert("Please enter a valid number");
-    return;
-  }
-
-  const result = operate(numberOne, operator, numberTwo);
-  alert("Result is: " + result);
-}
+let firstNumber = "";
+let secondNumber = "";
+let operator = "";
+let shouldResetDisplay = false;
 
 function add(num1, num2) {
   return num1 + num2;
@@ -39,9 +25,7 @@ function multiply(num1, num2) {
 }
 
 function divide(num1, num2) {
-  if (num2 === 0) {
-    return "Cannot divide by zero";
-  }
+  if (num2 === 0) return errorMessage;
   return num1 / num2;
 }
 
@@ -56,8 +40,43 @@ function operate(num1, operator, num2) {
     case "/":
       return divide(num1, num2);
     default:
-      return "Invalid operator";
+      return "Error";
   }
 }
 
-getNumbers();
+numberButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (
+      display.textContent === "0" ||
+      shouldResetDisplay ||
+      display.textContent === "Math Error"
+    ) {
+      display.textContent = button.dataset.number;
+      shouldResetDisplay = false;
+    } else {
+      display.textContent += button.dataset.number;
+    }
+  });
+});
+
+operatorButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    firstNumber = display.textContent;
+    operator = button.dataset.operator;
+    shouldResetDisplay = true;
+  });
+});
+
+equalsButton.addEventListener("click", () => {
+  secondNumber = display.textContent;
+  const result = operate(Number(firstNumber), operator, Number(secondNumber));
+  display.textContent = result;
+});
+
+clearButton.addEventListener("click", () => {
+  display.textContent = "0";
+  firstNumber = "";
+  secondNumber = "";
+  operator = "";
+  shouldResetDisplay = false;
+});
