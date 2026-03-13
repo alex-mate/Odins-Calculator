@@ -1,5 +1,6 @@
 const displayText = document.querySelector("#display-text");
 const displayBox = document.querySelector("#display");
+const historyBox = document.querySelector("#history-display");
 
 const numberButtons = document.querySelectorAll(".number");
 const operatorButtons = document.querySelectorAll(".operator");
@@ -62,29 +63,60 @@ function formatResult(value) {
 function updateDisplay(value) {
   displayText.textContent = value;
   displayBox.scrollLeft = displayBox.scrollWidth;
+  historyBox.textContent = `${firstNumber} ${operator} ${secondNumber}`;
 }
 
-numberButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    if (
-      displayText.textContent === "0" ||
-      shouldResetDisplay ||
-      isInvalidDisplayValue()
-    ) {
-      updateDisplay(button.dataset.number);
-      shouldResetDisplay = false;
-    } else {
-      updateDisplay(displayText.textContent + button.dataset.number);
-    }
-  });
-});
+function isInvalidDisplayValue() {
+  return (
+    displayText.textContent === mathErrorMessage ||
+    displayText.textContent === "Error" ||
+    displayText.textContent === "Infinity" ||
+    displayText.textContent === "NaN"
+  );
+}
+
+function appendNumber(number) {
+  if (
+    displayText.textContent === "0" ||
+    shouldResetDisplay ||
+    isInvalidDisplayValue()
+  ) {
+    updateDisplay(number);
+    shouldResetDisplay = false;
+  } else {
+    updateDisplay(displayText.textContent + number);
+  }
+}
+
+function chooseOperator(newOperator) {
+  if (isInvalidDisplayValue()) return;
+
+  if (operator !== "" && !shouldResetDisplay) {
+    evaluate();
+  }
+
+  firstNumber = displayText.textContent;
+
+  operator = newOperator;
+  shouldResetDisplay = true;
+}
+
+function resetCalculator() {
+  updateDisplay("0");
+  firstNumber = "";
+  secondNumber = "";
+  operator = "";
+  shouldResetDisplay = false;
+}
 
 function handleDecimal() {
   if (shouldResetDisplay || isInvalidDisplayValue()) {
     updateDisplay("0.");
     shouldResetDisplay = false;
     return;
-  } else if (!displayText.textContent.includes(".")) {
+  }
+
+  if (!displayText.textContent.includes(".")) {
     updateDisplay(displayText.textContent + ".");
   }
 }
@@ -104,53 +136,73 @@ function backSpace() {
   updateDisplay(newValue);
 }
 
-function isInvalidDisplayValue() {
-  return (
-    displayText.textContent === mathErrorMessage ||
-    displayText.textContent === "Error" ||
-    displayText.textContent === "Infinity" ||
-    displayText.textContent === "NaN"
-  );
-}
 // chaining operations without pressing equals
 function evaluate() {
-  if (operator === "" && !shouldResetDisplay) {
+  if (operator === "" || shouldResetDisplay) {
     return;
   }
-  secondNumber = displayText.textContent;
 
+  secondNumber = displayText.textContent;
   const result = operate(Number(firstNumber), operator, Number(secondNumber));
-  firstNumber = displayText.textContent;
   updateDisplay(formatResult(result));
+  firstNumber = displayText.textContent;
+  shouldResetDisplay = true;
 }
+
 operatorButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (isInvalidDisplayValue()) return;
+    chooseOperator(button.dataset.operator);
+  });
+});
 
-    if (operator !== "" && !shouldResetDisplay) {
-      evaluate();
-    }
-
-    firstNumber = displayText.textContent;
-    operator = button.dataset.operator;
-    shouldResetDisplay = true;
+numberButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    appendNumber(button.dataset.number);
   });
 });
 
 equalsButton.addEventListener("click", () => {
-  secondNumber = displayText.textContent;
-  const result = operate(Number(firstNumber), operator, Number(secondNumber));
-  updateDisplay(formatResult(result));
+  evaluate();
+  operator = "";
 });
 
-clearButton.addEventListener("click", () => {
-  updateDisplay("0");
-  firstNumber = "";
-  secondNumber = "";
-  operator = "";
-  shouldResetDisplay = false;
-});
+clearButton.addEventListener("click", resetCalculator);
 
 decimalButton.addEventListener("click", handleDecimal);
 
 backspaceButton.addEventListener("click", backSpace);
+
+// keyboard support
+document.addEventListener("keydown", (event) => {
+  if (event.key >= "0" && event.key <= "9") {
+    appendNumber(event.key);
+  }
+
+  if (event.key === ".") {
+    handleDecimal();
+  }
+
+  if (
+    event.key === "+" ||
+    event.key === "-" ||
+    event.key === "*" ||
+    event.key === "/"
+  ) {
+    chooseOperator(event.key);
+  }
+
+  if (event.key === "Enter" || event.key === "=") {
+    event.preventDefault();
+    evaluate();
+    operator = "";
+  }
+
+  if (event.key === "Backspace") {
+    event.preventDefault();
+    backSpace();
+  }
+
+  if (event.key === "Escape") {
+    resetCalculator();
+  }
+});
