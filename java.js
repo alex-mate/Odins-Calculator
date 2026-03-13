@@ -69,10 +69,7 @@ numberButtons.forEach((button) => {
     if (
       displayText.textContent === "0" ||
       shouldResetDisplay ||
-      displayText.textContent === "Math Error" ||
-      displayText.textContent === "Error" ||
-      displayText.textContent === "Infinity" ||
-      displayText.textContent === "NaN"
+      isInvalidDisplayValue()
     ) {
       updateDisplay(button.dataset.number);
       shouldResetDisplay = false;
@@ -82,8 +79,58 @@ numberButtons.forEach((button) => {
   });
 });
 
+function handleDecimal() {
+  if (shouldResetDisplay || isInvalidDisplayValue()) {
+    updateDisplay("0.");
+    shouldResetDisplay = false;
+    return;
+  } else if (!displayText.textContent.includes(".")) {
+    updateDisplay(displayText.textContent + ".");
+  }
+}
+
+function backSpace() {
+  if (shouldResetDisplay || isInvalidDisplayValue()) {
+    return;
+  }
+
+  const newValue = displayText.textContent.slice(0, -1);
+
+  if (newValue === "" || newValue === "-") {
+    updateDisplay("0");
+    return;
+  }
+
+  updateDisplay(newValue);
+}
+
+function isInvalidDisplayValue() {
+  return (
+    displayText.textContent === mathErrorMessage ||
+    displayText.textContent === "Error" ||
+    displayText.textContent === "Infinity" ||
+    displayText.textContent === "NaN"
+  );
+}
+// chaining operations without pressing equals
+function evaluate() {
+  if (operator === "" && !shouldResetDisplay) {
+    return;
+  }
+  secondNumber = displayText.textContent;
+
+  const result = operate(Number(firstNumber), operator, Number(secondNumber));
+  firstNumber = displayText.textContent;
+  updateDisplay(formatResult(result));
+}
 operatorButtons.forEach((button) => {
   button.addEventListener("click", () => {
+    if (isInvalidDisplayValue()) return;
+
+    if (operator !== "" && !shouldResetDisplay) {
+      evaluate();
+    }
+
     firstNumber = displayText.textContent;
     operator = button.dataset.operator;
     shouldResetDisplay = true;
@@ -103,3 +150,7 @@ clearButton.addEventListener("click", () => {
   operator = "";
   shouldResetDisplay = false;
 });
+
+decimalButton.addEventListener("click", handleDecimal);
+
+backspaceButton.addEventListener("click", backSpace);
