@@ -1,11 +1,13 @@
-const display = document.querySelector("#display");
+const displayText = document.querySelector("#display-text");
+const displayBox = document.querySelector("#display");
+
 const numberButtons = document.querySelectorAll(".number");
 const operatorButtons = document.querySelectorAll(".operator");
 const equalsButton = document.querySelector("#equals");
 const clearButton = document.querySelector("#clear");
 const decimalButton = document.querySelector("#decimal");
 const backspaceButton = document.querySelector("#backspace");
-const errorMessage = "Math Error";
+const mathErrorMessage = "Math Error";
 
 let firstNumber = "";
 let secondNumber = "";
@@ -25,7 +27,7 @@ function multiply(num1, num2) {
 }
 
 function divide(num1, num2) {
-  if (num2 === 0) return errorMessage;
+  if (num2 === 0) return mathErrorMessage;
   return num1 / num2;
 }
 
@@ -44,37 +46,58 @@ function operate(num1, operator, num2) {
   }
 }
 
+function formatResult(value) {
+  if (value === mathErrorMessage || value === "Error") return value;
+
+  let rounded = Math.round(value * 1000000) / 1000000;
+  let stringValue = String(rounded);
+
+  if (stringValue.length > 12) {
+    return Number(rounded).toExponential(5);
+  }
+
+  return stringValue;
+}
+
+function updateDisplay(value) {
+  displayText.textContent = value;
+  displayBox.scrollLeft = displayBox.scrollWidth;
+}
+
 numberButtons.forEach((button) => {
   button.addEventListener("click", () => {
     if (
-      display.textContent === "0" ||
+      displayText.textContent === "0" ||
       shouldResetDisplay ||
-      display.textContent === "Math Error"
+      displayText.textContent === "Math Error" ||
+      displayText.textContent === "Error" ||
+      displayText.textContent === "Infinity" ||
+      displayText.textContent === "NaN"
     ) {
-      display.textContent = button.dataset.number;
+      updateDisplay(button.dataset.number);
       shouldResetDisplay = false;
     } else {
-      display.textContent += button.dataset.number;
+      updateDisplay(displayText.textContent + button.dataset.number);
     }
   });
 });
 
 operatorButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    firstNumber = display.textContent;
+    firstNumber = displayText.textContent;
     operator = button.dataset.operator;
     shouldResetDisplay = true;
   });
 });
 
 equalsButton.addEventListener("click", () => {
-  secondNumber = display.textContent;
+  secondNumber = displayText.textContent;
   const result = operate(Number(firstNumber), operator, Number(secondNumber));
-  display.textContent = result;
+  updateDisplay(formatResult(result));
 });
 
 clearButton.addEventListener("click", () => {
-  display.textContent = "0";
+  updateDisplay("0");
   firstNumber = "";
   secondNumber = "";
   operator = "";
